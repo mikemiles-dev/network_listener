@@ -15,7 +15,7 @@ async fn main() -> io::Result<()> {
     let mut pcap_listener = PcapListener;
 
     // Used to collect all communications from all sources
-    let mut communications = Arc::new(RwLock::new(communication::Communications::default()));
+    let communications = Arc::new(RwLock::new(communication::Communications::default()));
 
     // Listen for communications from netflow
     let rwlock = communications.clone();

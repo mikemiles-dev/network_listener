@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io;
-use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::RwLock;
@@ -8,6 +7,7 @@ use tokio::sync::RwLock;
 use netflow_parser::NetflowParser;
 
 use crate::communication::Communications;
+
 pub struct NetflowListener {
     sock: UdpSocket,
     parsers: HashMap<String, NetflowParser>,
@@ -29,8 +29,6 @@ impl NetflowListener {
         communication_writer: Arc<RwLock<Communications>>,
     ) -> io::Result<()> {
         loop {
-            let mut communications = Communications::default();
-
             let mut buf = [0; 65535];
 
             let (len, addr) = self.sock.recv_from(&mut buf).await?;
@@ -48,27 +46,7 @@ impl NetflowListener {
                 }
             };
 
-            for flowset in flowsets {
-                let ip_addr = match flowset.src_addr {
-                    Some(addr) => addr,
-                    None => continue,
-                };
-                let dst_addr = match flowset.dst_addr {
-                    Some(addr) => addr,
-                    None => continue,
-                };
-                let dst_port = match flowset.dst_port {
-                    Some(port) => port,
-                    None => continue,
-                };
-                let protocol = match flowset.protocol_number {
-                    Some(proto) => proto,
-                    None => continue,
-                };
-                let dst_addr = SocketAddr::new(dst_addr, dst_port);
-                communications.insert(ip_addr, dst_addr.ip(), dst_port, protocol);
-            }
-            communication_writer.write().await.merge(communications);
+            communication_writer.write().await.merge(flowsets.into());
         }
     }
 }
