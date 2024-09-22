@@ -17,7 +17,10 @@ async fn main() -> io::Result<()> {
         communications.merge(netflow_communications);
 
         for (ip_addr, communication) in communications.communications.iter() {
-            println!("IP Address: {ip_addr} Communications: {:?}", communication);
+            println!(
+                "IP Address: {ip_addr} Connections: {:?}",
+                communication.connections
+            );
         }
     }
 }

@@ -61,7 +61,7 @@ impl NetflowListener {
                 None => continue,
             };
             let dst_addr = SocketAddr::new(dst_addr, dst_port);
-            communications.insert(ip_addr, dst_addr, protocol);
+            communications.insert(ip_addr, dst_addr.ip(), dst_port, protocol);
         }
 
         Ok(communications)
