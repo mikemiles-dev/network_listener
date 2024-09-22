@@ -9,7 +9,7 @@ use crate::communication::Communications;
 
 pub struct PcapListener;
 
-const PCAP_PATH: &str = "./";
+const PCAP_PATH: &str = "./pcaps";
 const PCAP_EXTENSION: &str = ".pcap";
 const PCAP_LISTEN_INTERVAL_MILLIS: u64 = 1000;
 
