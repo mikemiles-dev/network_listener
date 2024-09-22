@@ -2,8 +2,8 @@ mod communication;
 mod netflow;
 mod pcap;
 
-use std::sync::Arc;
 use std::io;
+use std::sync::Arc;
 
 use netflow::NetflowListener;
 use pcap::PcapListener;
@@ -17,21 +17,18 @@ async fn main() -> io::Result<()> {
     // Used to collect all communications from all sources
     let mut communications = Arc::new(RwLock::new(communication::Communications::default()));
 
-        // Listen for communications from netflow
-        let rwlock = communications.clone();
-        tokio::spawn(async move {
-            let mut netflow_listener = NetflowListener::new("0.0.0.0:9995").await;
-            netflow_listener.listen(rwlock).await
-        });
+    // Listen for communications from netflow
+    let rwlock = communications.clone();
+    tokio::spawn(async move {
+        let mut netflow_listener = NetflowListener::new("0.0.0.0:9995").await;
+        netflow_listener.listen(rwlock).await
+    });
 
-        // Listen for communications from pcap
-        let rwlock = communications.clone();
-        tokio::spawn(async move {
-            pcap_listener.listen(rwlock).await
-        });
+    // Listen for communications from pcap
+    let rwlock = communications.clone();
+    tokio::spawn(async move { pcap_listener.listen(rwlock).await });
 
     loop {
-
         for (ip_addr, communication) in communications.read().await.communications.iter() {
             println!(
                 "IP Address: {ip_addr} Connections: {:?}",

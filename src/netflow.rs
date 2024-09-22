@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io;
-use std::sync::Arc;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::RwLock;
 
@@ -24,7 +24,10 @@ impl NetflowListener {
         }
     }
 
-    pub async fn listen(&mut self, communication_writer: Arc<RwLock<Communications>>) -> io::Result<()> {
+    pub async fn listen(
+        &mut self,
+        communication_writer: Arc<RwLock<Communications>>,
+    ) -> io::Result<()> {
         loop {
             let mut communications = Communications::default();
 
