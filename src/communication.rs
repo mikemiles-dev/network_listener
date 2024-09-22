@@ -67,12 +67,14 @@ impl Communications {
                         .connections
                         .get_mut(dst_ip_addr)
                     {
+                        // If the destination IP address exists, update the connection
                         Some(existing_connections) => {
                             existing_connections.remove(new_connection);
                             let mut new_connection = new_connection.clone();
                             new_connection.updated_at = SystemTime::now();
                             existing_connections.insert(new_connection);
                         }
+                        // If the destination IP address does not exist, create a new connection
                         None => {
                             let mut new_connections = HashSet::new();
                             new_connections.insert(new_connection.clone());
