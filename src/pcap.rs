@@ -25,10 +25,22 @@ impl PcapListener {
             let pcaps = Self::get_pcaps_list(PCAP_PATH);
             println!("Found the following pcaps: {pcaps:?}");
 
+            // Process each pcap file
             for pcap in pcaps {
                 println!("Processing pcap: {pcap:?}");
-                let communications = Self::process_pcap(pcap.to_str().unwrap());
+                let pcap_str = match pcap.to_str() {
+                    Some(pcap_str) => pcap_str,
+                    None => {
+                        println!("Error converting {pcap:?} to string");
+                        continue;
+                    }
+                };
+                let communications = Self::process_pcap(pcap_str);
+
+                // Merge communications
                 communications_writer.write().await.merge(communications);
+
+                // Rename file
                 let mut parsed_filename = pcap.clone();
                 parsed_filename.push(PCAP_PARSED_EXTENSION);
                 match fs::rename(&pcap, parsed_filename) {

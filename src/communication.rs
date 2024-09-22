@@ -8,7 +8,7 @@ use netflow_parser::netflow_common::NetflowCommonFlowSet;
 pub type Protocol = u8;
 
 // Implement the Communications struct
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Communications {
     pub communications: HashMap<IpAddr, Communication>,
 }
@@ -44,22 +44,45 @@ impl Communications {
 
     // Implement the merge method for the Communications struct
     pub fn merge(&mut self, other: Communications) {
-        for (ip_addr, communication) in other.communications.iter() {
-            let communication_record = self
-                .communications
-                .entry(*ip_addr)
-                .or_insert(Communication::new());
-            for (dst_ip_addr, connections) in communication.connections.iter() {
-                for connection in connections.iter() {
-                    let connections = communication_record
+        // Iterate over the communications in the other Communications struct
+        for (ip_addr, new_communication) in other.communications.iter() {
+            // Get the communication record for the IP address
+            let existing_communication_record = match self.communications.get_mut(ip_addr) {
+                Some(record) => {
+                    // Update the communication record with the new communication
+                    record.updated_at = SystemTime::now();
+                    record
+                }
+                // If the IP address does not exist, create a new communication record
+                None => {
+                    self.communications
+                        .insert(*ip_addr, new_communication.clone());
+                    self.communications.get_mut(ip_addr).unwrap()
+                }
+            };
+            // Iterate over the connections in the new communication
+            for (dst_ip_addr, new_connections) in new_communication.connections.iter() {
+                for new_connection in new_connections.iter() {
+                    match existing_communication_record
                         .connections
-                        .entry(*dst_ip_addr)
-                        .or_default();
-                    connections.remove(connection);
-                    connections.insert(connection.clone());
+                        .get_mut(dst_ip_addr)
+                    {
+                        Some(existing_connections) => {
+                            existing_connections.remove(new_connection);
+                            let mut new_connection = new_connection.clone();
+                            new_connection.updated_at = SystemTime::now();
+                            existing_connections.insert(new_connection);
+                        }
+                        None => {
+                            let mut new_connections = HashSet::new();
+                            new_connections.insert(new_connection.clone());
+                            existing_communication_record
+                                .connections
+                                .insert(*dst_ip_addr, new_connections);
+                        }
+                    }
                 }
             }
-            communication_record.updated_at = SystemTime::now();
         }
     }
 }
@@ -88,7 +111,7 @@ impl PartialEq for Connection {
 }
 
 // Implement the new method for the Connection struct
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Communication {
     pub connections: HashMap<IpAddr, HashSet<Connection>>,
     pub created_at: SystemTime,
