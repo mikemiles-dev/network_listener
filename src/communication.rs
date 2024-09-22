@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::net::{IpAddr, SocketAddr};
+use std::net::IpAddr;
 use std::time::SystemTime;
 
 pub type Protocol = u8;
@@ -30,7 +30,7 @@ impl Communications {
         let connections = communication_record
             .connections
             .entry(dst_ip_addr)
-            .or_insert(HashSet::new());
+            .or_default();
         connections.remove(&connection);
         connections.insert(connection);
         communication_record.updated_at = SystemTime::now();
@@ -47,7 +47,7 @@ impl Communications {
                     let connections = communication_record
                         .connections
                         .entry(*dst_ip_addr)
-                        .or_insert(HashSet::new()); 
+                        .or_default();
                     connections.remove(connection);
                     connections.insert(connection.clone());
                 }
