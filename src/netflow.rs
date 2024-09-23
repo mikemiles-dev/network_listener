@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 
 use netflow_parser::NetflowParser;
 
-use crate::communication::Communications;
+use crate::neo4j::Store;
 
 pub struct NetflowListener {
     sock: UdpSocket,
@@ -24,10 +24,7 @@ impl NetflowListener {
         }
     }
 
-    pub async fn listen(
-        &mut self,
-        communication_writer: Arc<RwLock<Communications>>,
-    ) -> io::Result<()> {
+    pub async fn listen(&mut self, store: Arc<RwLock<Store>>) -> io::Result<()> {
         loop {
             let mut buf = [0; 65535];
 
@@ -46,7 +43,7 @@ impl NetflowListener {
                 }
             };
 
-            communication_writer.write().await.merge(flowsets.into());
+            store.write().await.netflowsets.extend(flowsets);
         }
     }
 }

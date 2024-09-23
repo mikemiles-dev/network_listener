@@ -1,10 +1,11 @@
-mod communication;
+mod neo4j;
 mod netflow;
 mod pcap;
 
 use std::io;
 use std::sync::Arc;
 
+use neo4j::Store;
 use netflow::NetflowListener;
 use pcap::PcapListener;
 use tokio::sync::RwLock;
@@ -14,26 +15,24 @@ use tokio::time::{sleep, Duration};
 async fn main() -> io::Result<()> {
     let mut pcap_listener = PcapListener;
 
-    // Used to collect all communications from all sources
-    let communications = Arc::new(RwLock::new(communication::Communications::default()));
+    // Create a Neo4j store
+    let store = Arc::new(RwLock::new(Store::default()));
 
     // Listen for communications from netflow
-    let rwlock = communications.clone();
+    let rwlock = store.clone();
     tokio::spawn(async move {
         let mut netflow_listener = NetflowListener::new("0.0.0.0:9995").await;
         netflow_listener.listen(rwlock).await
     });
 
     // Listen for communications from pcap
-    let rwlock = communications.clone();
+    let rwlock = store.clone();
     tokio::spawn(async move { pcap_listener.listen(rwlock).await });
 
     loop {
-        for (ip_addr, communication) in communications.read().await.communications.iter() {
-            println!(
-                "IP Address: {ip_addr} Connections: {:?}",
-                communication.connections
-            );
+        let store = store.read().await;
+        for netflow in store.netflowsets.iter() {
+            println!("{:?}", netflow);
         }
         sleep(Duration::from_millis(100)).await;
     }

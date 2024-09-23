@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-netflow_parser = "0.4.6"
+netflow_parser = "0.4.7"
 pcap-file = "2.0.0-rc1"
 tokio = { version = "1.38.0", features = ["full"] }
 tokio-macros = { version = "0.2.0-alpha.6" }

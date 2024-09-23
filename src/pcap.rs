@@ -5,9 +5,10 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
+use netflow_parser::netflow_common::NetflowCommonFlowSet;
 use pcap_file::pcap::PcapReader;
 
-use crate::communication::Communications;
+use crate::neo4j::Store;
 
 pub struct PcapListener;
 
@@ -17,10 +18,7 @@ const PCAP_PARSED_EXTENSION: &str = ".parsed";
 const PCAP_LISTEN_INTERVAL_MILLIS: u64 = 1000;
 
 impl PcapListener {
-    pub async fn listen(
-        &mut self,
-        communications_writer: Arc<RwLock<Communications>>,
-    ) -> io::Result<()> {
+    pub async fn listen(&mut self, store: Arc<RwLock<Store>>) -> io::Result<()> {
         loop {
             let pcaps = Self::get_pcaps_list(PCAP_PATH);
             println!("Found the following pcaps: {pcaps:?}");
@@ -35,10 +33,10 @@ impl PcapListener {
                         continue;
                     }
                 };
-                let communications = Self::process_pcap(pcap_str);
+                let flows = Self::process_pcap(pcap_str);
 
                 // Merge communications
-                communications_writer.write().await.merge(communications);
+                store.write().await.netflowsets.extend(flows);
 
                 // Rename file
                 let mut parsed_filename = pcap.clone();
@@ -53,8 +51,8 @@ impl PcapListener {
         }
     }
 
-    fn process_pcap(file_name: &str) -> Communications {
-        let mut communications = Communications::default();
+    fn process_pcap(file_name: &str) -> Vec<NetflowCommonFlowSet> {
+        let mut flowsets = vec![];
         let file_in = fs::File::open(file_name).expect("Error opening file");
         let mut pcap_reader = PcapReader::new(file_in).unwrap();
 
@@ -67,11 +65,10 @@ impl PcapListener {
                 // Attempt to parse as Netflow
                 let netflow = netflow_parser::NetflowParser::default()
                     .parse_bytes_as_netflow_common_flowsets(body);
-                communications.merge(netflow.into());
+                flowsets.extend(netflow);
             }
         }
-
-        communications
+        flowsets
     }
 
     // Get list of pcap files
