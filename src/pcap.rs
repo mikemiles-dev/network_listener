@@ -15,7 +15,7 @@ pub struct PcapListener;
 const PCAP_PATH: &str = "./pcaps";
 const PCAP_EXTENSION: &str = ".pcap";
 const PCAP_PARSED_EXTENSION: &str = ".parsed";
-const PCAP_LISTEN_INTERVAL_MILLIS: u64 = 1000;
+const PCAP_LISTEN_INTERVAL_SECS: u64 = 5;
 
 impl PcapListener {
     pub async fn listen(&mut self, store: Arc<RwLock<Store>>) -> io::Result<()> {
@@ -47,7 +47,7 @@ impl PcapListener {
                 }
             }
 
-            sleep(Duration::from_millis(PCAP_LISTEN_INTERVAL_MILLIS)).await;
+            sleep(Duration::from_secs(PCAP_LISTEN_INTERVAL_SECS)).await;
         }
     }
 

@@ -5,15 +5,15 @@ mod pcap;
 use std::io;
 use std::sync::Arc;
 
-use neo4j::Store;
+use neo4j::{Neo4JWriter, Store};
 use netflow::NetflowListener;
 use pcap::PcapListener;
 use tokio::sync::RwLock;
-use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let mut pcap_listener = PcapListener;
+    let neo4j_writer = Neo4JWriter;
 
     // Create a Neo4j store
     let store = Arc::new(RwLock::new(Store::default()));
@@ -30,10 +30,7 @@ async fn main() -> io::Result<()> {
     tokio::spawn(async move { pcap_listener.listen(rwlock).await });
 
     loop {
-        let store = store.read().await;
-        for netflow in store.netflowsets.iter() {
-            println!("{:?}", netflow);
-        }
-        sleep(Duration::from_millis(100)).await;
+        let rwlock = store.clone();
+        neo4j_writer.start(rwlock).await;
     }
 }
