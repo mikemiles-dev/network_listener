@@ -54,7 +54,10 @@ impl PcapListener {
     fn process_pcap(file_name: &str) -> Vec<NetflowCommonFlowSet> {
         let mut flowsets = vec![];
         let file_in = fs::File::open(file_name).expect("Error opening file");
-        let mut pcap_reader = PcapReader::new(file_in).unwrap();
+        let mut pcap_reader = match PcapReader::new(file_in) {
+            Ok(pcap_reader) => pcap_reader,
+            Err(_) => return Vec::new(),
+        };
 
         // Read test.pcap
         while let Some(pkt) = pcap_reader.next_packet() {
